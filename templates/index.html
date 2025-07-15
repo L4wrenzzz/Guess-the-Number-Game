@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Guess the Number Game</title>
+    <link rel="icon" href="{{ url_for('static', filename='guessLogo.png') }}">
+<style>
+body {
+    background-color: #000000;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+}
+
+input, select, button {
+    background-color: #010101;
+    color: white;
+    border: 1px solid #444;
+    padding: 5px 10px;
+    margin-top: 5px;
+}
+
+button:hover {
+    background-color: #333;
+}
+
+/* Remove number input arrows */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    background-color: #000000;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 5px 10px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+}
+
+#game-container {
+    transition: opacity 0.6s ease;
+}
+
+#game-container.show {
+    opacity: 1;
+}
+</style>
+</head>
+<body>
+    <!-- Intro Screen -->
+    <div id="intro-screen" class="container" {% if game_started %}style="display: none;"{% endif %}>
+        <h1>❓Guess the Number Game</h1>
+        <form method="POST">
+            <input type="hidden" name="form_type" value="start_game">
+            <button type="submit">Play</button>
+        </form>
+    </div>
+    {% if game_started %}
+    <!-- Main Game UI (hidden at first) -->
+    <div id="game-container" class="container {% if game_started %}show{% endif%}" {% if not game_started %}style="display: none;"{% endif %}>
+        <h1>❓ Guess the Number Game</h1>
+        <p>You have 3 attempts per game</p>
+
+        <!-- Difficulty Form -->
+        <form method="POST">
+            <label for="difficulty">Choose a difficulty:</label>
+            <select name="difficulty" id="difficulty">
+                <option value="easy" {% if selected_difficulty == 'easy' %}selected{% endif %}>Easy (1–10)</option>
+                <option value="medium" {% if selected_difficulty == 'medium' %}selected{% endif %}>Medium (1–50)</option>
+                <option value="hard" {% if selected_difficulty == 'hard' %}selected{% endif %}>Hard (1–100)</option>
+                <option value="impossible" {% if selected_difficulty == 'impossible' %}selected{% endif %}>Impossible (1–1000)</option>
+            </select>
+            <button type="submit" name="form_type" value="set_difficulty">Start Game</button>
+        </form>
+
+        <p>{{ message }}</p>
+
+        <!-- Guessing Form -->
+        <form method="POST">
+            <label for="guess">Enter your guess:</label>
+            <input type="number" name="guess" id="guess" required placeholder="Enter a number">
+            <button type="submit" name="form_type" value="make_guess">Submit</button>
+        </form>
+
+        <p>Current Attempt(s) left: {{ attempts }}</p>
+
+        <div class="stats">
+            <p>🎮 Total Games Played: {{ totalGames }}</p>
+            <p>✅ Correct Guesses: {{ correctGuesses }}</p>
+        </div>
+
+        {% if '✅' in message %}
+        <img src="{{ url_for('static', filename='correct.gif') }}" alt="Correct" width="200">
+        {% elif '❌' in message %}
+        <img src="{{ url_for('static', filename='wrong.gif') }}" alt="Wrong" width="200">
+        {% endif %}
+    </div>
+    {% endif %}
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
