@@ -3,6 +3,7 @@ from flask import Flask, render_template, request
 # render_template = to render HTML from templates folder
 # request = to get user input from the web app
 import random # random = to generate a random number
+import os
 
 guessnumber = Flask(__name__) # create a Flask app
 
@@ -96,4 +97,5 @@ def index():
     )
 
 if __name__ == '__main__':
-    guessnumber.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    guessnumber.run(host="0.0.0.0", port=port, debug=True)
