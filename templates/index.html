@@ -2,108 +2,202 @@
 <html>
 <head>
     <title>Guess the Number Game</title>
-    <link rel="icon" href="{{ url_for('static', filename='guessLogo.png') }}">
-<style>
-body {
-    background-color: #000000;
-    color: #ffffff;
-    font-family: Arial, sans-serif;
-}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
 
-input, select, button {
-    background-color: #010101;
-    color: white;
-    border: 1px solid #444;
-    padding: 5px 10px;
-    margin-top: 5px;
-}
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            flex-direction: column;
+        }
 
-button:hover {
-    background-color: #333;
-}
+        input, select, button {
+            background-color: #111;
+            color: white;
+            border: 1px solid #444;
+            padding: 10px;
+            margin: 5px auto;
+            display: block;
+            width: 250px;
+            max-width: 90%;
+        }
 
-/* Remove number input arrows */
-input[type=number]::-webkit-inner-spin-button,
-input[type=number]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
+        button[type="submit"] {
+            background-color: #1b981b;
+            border-radius: 10px;
+        }
 
-input[type=number] {
-    background-color: #000000;
-    color: #fff;
-    border: 1px solid #444;
-    padding: 5px 10px;
-}
+        button[type="submit"]:hover {
+            background-color: #0edc0e;
+        }
 
-.container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    text-align: center;
-}
+        .game-grid {
+            display: flex;
+            flex-direction: column;
+        }
 
-#game-container {
-    transition: opacity 0.6s ease;
-}
+        @media (min-width: 768px) {
+            .game-grid {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 30px;
+            }
 
-#game-container.show {
-    opacity: 1;
-}
-</style>
+            .game-center {
+                flex: 2;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin-top: 40px;
+            }
+
+            .leaderboard {
+                flex: 1;
+            }
+        }
+
+        .timer {
+            font-size: 1.2em;
+            color: #ff0000;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        li {
+            margin: 3px 0;
+        }
+    </style>
 </head>
 <body>
-    <!-- Intro Screen -->
-    <div id="intro-screen" class="container" {% if game_started %}style="display: none;"{% endif %}>
-        <h1>❓Guess the Number Game</h1>
-        <form method="POST">
-            <input type="hidden" name="form_type" value="start_game">
-            <button type="submit">Play</button>
-        </form>
-    </div>
-    {% if game_started %}
-    <!-- Main Game UI (hidden at first) -->
-    <div id="game-container" class="container {% if game_started %}show{% endif%}" {% if not game_started %}style="display: none;"{% endif %}>
-        <h1>❓ Guess the Number Game</h1>
-        <p>You have 3 attempts per game</p>
+    {% if not game_started %}
+        <div class="flex-center">
+            <h1>❓ Guess the Number Game</h1>
+            <form method="POST">
+                <input type="hidden" name="form_type" value="start_game">
+                <input type="text" name="username" placeholder="Enter your name" autocomplete="off">
+                <button type="submit">Play</button>
+            </form>
+        </div>
+    {% else %}
+        <div class="game-grid">
+            <div class="leaderboard" style="position: absolute; top: 60px; left: 10px; text-align: left;">
+                <h2>🏆 Leaderboard</h2>
+                {% if leaderboard %}
+                <ul>
+                    {% for name, score in leaderboard %}
+                        <li>{{ loop.index }}. {{ name }} - {{ score }} points</li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p>No scores yet.</p>
+                {% endif %}
+            </div>
 
-        <!-- Difficulty Form -->
-        <form method="POST">
-            <label for="difficulty">Choose a difficulty:</label>
-            <select name="difficulty" id="difficulty">
-                <option value="easy" {% if selected_difficulty == 'easy' %}selected{% endif %}>Easy (1–10)</option>
-                <option value="medium" {% if selected_difficulty == 'medium' %}selected{% endif %}>Medium (1–50)</option>
-                <option value="hard" {% if selected_difficulty == 'hard' %}selected{% endif %}>Hard (1–100)</option>
-                <option value="impossible" {% if selected_difficulty == 'impossible' %}selected{% endif %}>Impossible (1–1000)</option>
-            </select>
-            <button type="submit" name="form_type" value="set_difficulty">Start Game</button>
-        </form>
+            <div class="game-center" style="margin: auto;">
+                <h1>❓ Guess the Number Game</h1>
 
-        <p>{{ message }}</p>
+                <div style="position: absolute; top: 10px; left: 10px;">
+                    <form method="POST">
+                        <input type="hidden" name="form_type" value="go_back">
+                        <button type="submit" style="background-color: #b92c2c;">Back</button>
+                    </form>
+                </div>
 
-        <!-- Guessing Form -->
-        <form method="POST">
-            <label for="guess">Enter your guess:</label>
-            <input type="number" name="guess" id="guess" required placeholder="Enter a number">
-            <button type="submit" name="form_type" value="make_guess">Submit</button>
-        </form>
+                <p><strong>Hello!</strong> {{ username }}</p>
 
-        <p>Current Attempt(s) left: {{ attempts }}</p>
+                <form method="POST">
+                    <label>Choose difficulty:</label>
+                    <select name="difficulty">
+                        <option value="easy" {% if selected_difficulty == 'easy' %}selected{% endif %}>Easy(1-10)</option>
+                        <option value="medium" {% if selected_difficulty == 'medium' %}selected{% endif %}>Medium(1-50)</option>
+                        <option value="hard" {% if selected_difficulty == 'hard' %}selected{% endif %}>Hard(1-100)</option>
+                        <option value="impossible" {% if selected_difficulty == 'impossible' %}selected{% endif %}>Impossible(1-1000)</option>
+                    </select>
+                    <button type="submit" name="form_type" value="set_difficulty">Set Difficulty</button>
+                </form>
 
-        <div class="stats">
-            <p>🎮 Total Games Played: {{ totalGames }}</p>
-            <p>✅ Correct Guesses: {{ correctGuesses }}</p>
+                {% if not game_ready %}
+                    <form method="POST">
+                        <input type="hidden" name="form_type" value="start_guessing">
+                        <button type="submit">Start Game</button>
+                    </form>
+                {% else %}
+                    <form method="POST">
+                        <label for="guess">Your Guess:</label>
+                        <input type="number" name="guess" id="guess" required placeholder="Enter your guess">
+                        <button type="submit" name="form_type" value="make_guess">Guess</button>
+                    </form>
+                {% endif %}
+
+                <p>{{ message }}</p>
+                <p class="timer">⏱️ Time: <span id="timer">{{ timer }}</span> sec</p>
+                <p>Total Games: {{ totalGames }}</p>
+                <p>Correct Guesses: {{ correctGuesses }}</p>
+
+                {% if '✅' in message %}
+                    <img src="{{ url_for('static', filename='correct.gif') }}" width="200">
+                {% elif '❌' in message %}
+                    <img src="{{ url_for('static', filename='wrong.gif') }}" width="200">
+                {% endif %}
+            </div>
         </div>
 
-        {% if '✅' in message %}
-        <img src="{{ url_for('static', filename='correct.gif') }}" alt="Correct" width="200">
-        {% elif '❌' in message %}
-        <img src="{{ url_for('static', filename='wrong.gif') }}" alt="Wrong" width="200">
+        <audio id="winSound" src="{{ url_for('static', filename='win.mp3') }}"></audio>
+        <audio id="loseSound" src="{{ url_for('static', filename='lose.mp3') }}"></audio>
+
+        {% if game_ready %}
+        <script>
+            let seconds = parseInt(document.getElementById('timer').innerText);
+            setInterval(() => {
+                seconds += 1;
+                document.getElementById('timer').innerText = seconds;
+            }, 1000);
+        </script>
         {% endif %}
-    </div>
+        
+        <script>
+            const winSound = document.getElementById('winSound');
+            const loseSound = document.getElementById('loseSound');
+            const message = "{{ message }}";
+
+            if (message.includes("✅")) {
+                winSound.loop(); true;
+                winSound.play();
+            } else if (message.toLowerCase().includes("game over")) {
+                loseSound.loop() = true;
+                loseSound.play();
+            }
+
+            document.querySelectorAll("form").forEach(form => {
+                form.addEventListener("submit", function () {
+                    const formType = form.querySelector('input[name="form_type"]');
+                    if (formType) {
+                        const value = formType.value;
+                        if (value === "go_back" || value === "set_difficulty" || value === "start_guessing") {
+                            winSound.pause();
+                            winSound.currentTime = 0;
+                            loseSound.pause();
+                            loseSound.currentTime = 0;
+                        }
+                    }
+                });
+            });
+        </script>
     {% endif %}
-<script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
