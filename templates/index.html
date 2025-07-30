@@ -4,83 +4,102 @@
     <title>Guess the Number Game</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        html, body {
+        /* Base reset and theme */
+        * { box-sizing: border-box; }
+        :root {
+            --gap: 32px;
+            --page-pad: 16px;
+            --lbw: 320px;
+         }
+        html, body { height: 100%; }
+        body {
             margin: 0;
-            padding: 0;
-            height: 100%;
-            background-color: #000;
+            background: #000;
             color: #fff;
             font-family: Arial, sans-serif;
+            overflow-x: hidden;
         }
 
+        /* Intro screen centering (works for mobile & desktop) */
         .flex-center {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            text-align: center;
             flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 24px;
         }
 
-        input, select, button {
-            background-color: #111;
-            color: white;
-            border: 1px solid #444;
-            padding: 10px;
-            margin: 5px auto;
-            display: block;
-            width: 250px;
-            max-width: 90%;
-        }
-
-        button[type="submit"] {
-            background-color: #1b981b;
-            border-radius: 10px;
-        }
-
-        button[type="submit"]:hover {
-            background-color: #0edc0e;
-        }
-
+        /* Game layout (mobile-first) */
         .game-grid {
+            display: block;
+            width: 100%;
+            padding:  24px var(--page-pad) 48px;
+        }
+
+        .leaderboard {
+            width: 100%;
+            max-width: 340px;
+            margin: 0 auto var(--gap);
+            text-align: center;
+        }
+
+        .game-center {
+            width: 100%;
+            max-width: 720px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .back-button-container {
+            position: static;
+            width: 100%;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        /* Desktop*/
+        @media (min-width: 768px) {
+        .game-grid {
+            padding-left: calc(var(--page-pad) + var(--lbw) + var(--gap));
+            padding-right: calc(var(--page-pad) + var(--lbw) + var(--gap)); /* ← symmetric */
+            min-height: 100vh;
+        }
+
+        .leaderboard {
+            position: fixed;
+            left: var(--page-pad);
+            top: 40px;
+            width: var(--lbw);
+            max-width: none;
+            text-align: left;
+            margin: 0;
+        }
+
+        .game-center {
+            max-width: 720px;
+            margin-inline: auto;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 40px;
         }
 
-        @media (min-width: 768px) {
-            .game-grid {
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: flex-start;
-                gap: 30px;
-            }
-
-            .game-center {
-                flex: 2;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                margin-top: 40px;
-            }
-
-            .leaderboard {
-                flex: 1;
-            }
+        .back-button-container {
+            position: fixed;
+            top: 20px;
+            left: var(--page-pad);
+            width: auto;
+            text-align: left;
+            margin: 0;
+            z-index: 10;
         }
-
-        .timer {
-            font-size: 1.2em;
-            color: #ff0000;
-        }
-
-        ul {
-            list-style: none;
-            padding-left: 0;
-        }
-
-        li {
-            margin: 3px 0;
-        }
+    }
+        .timer { font-size: 1.2em; color: #ff2e2e; }
+        ul { list-style: none; padding-left: 0; margin: 0; }
+        li { margin: 3px 0; }
     </style>
 </head>
 <body>
@@ -89,13 +108,13 @@
             <h1>❓ Guess the Number Game</h1>
             <form method="POST">
                 <input type="hidden" name="form_type" value="start_game">
-                <input type="text" name="username" placeholder="Enter your name" autocomplete="off">
+                <input type="text" name="username" placeholder="Enter your name" autocomplete="off" required>
                 <button type="submit">Play</button>
             </form>
         </div>
     {% else %}
         <div class="game-grid">
-            <div class="leaderboard" style="position: absolute; top: 60px; left: 10px; text-align: left;">
+            <div class="leaderboard">
                 <h2>🏆 Leaderboard</h2>
                 {% if leaderboard %}
                 <ul>
@@ -108,16 +127,16 @@
                 {% endif %}
             </div>
 
-            <div class="game-center" style="margin: auto;">
+            <div class="game-center">
                 <h1>❓ Guess the Number Game</h1>
 
-                <div style="position: absolute; top: 10px; left: 10px;">
+                <div class="back-button-container">
                     <form method="POST">
                         <input type="hidden" name="form_type" value="go_back">
-                        <button type="submit" style="background-color: #b92c2c;">Back</button>
+                        <button type="submit" style="background-color: #ff0000;">Back</button>
                     </form>
                 </div>
-
+                
                 <p><strong>Hello!</strong> {{ username }}</p>
 
                 <form method="POST">
@@ -176,10 +195,10 @@
             const message = "{{ message }}";
 
             if (message.includes("✅")) {
-                winSound.loop(); true;
+                winSound.loop = true;
                 winSound.play();
             } else if (message.toLowerCase().includes("game over")) {
-                loseSound.loop() = true;
+                loseSound.loop = true;
                 loseSound.play();
             }
 
