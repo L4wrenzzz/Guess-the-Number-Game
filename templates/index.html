@@ -1,222 +1,143 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Guess the Number Game</title>
+    <title>Guess the Number</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* Base reset and theme */
         * { box-sizing: border-box; }
-        :root {
-            --gap: 32px;
-            --page-pad: 16px;
-            --lbw: 320px;
-         }
-        html, body { height: 100%; }
-        body {
-            margin: 0;
-            background: #000;
-            color: #fff;
-            font-family: Arial, sans-serif;
-            overflow-x: hidden;
-        }
-
-        /* Intro screen centering (works for mobile & desktop) */
-        .flex-center {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            text-align: center;
-            padding: 24px;
-        }
-
-        /* Game layout (mobile-first) */
-        .game-grid {
-            display: block;
-            width: 100%;
-            padding:  24px var(--page-pad) 48px;
-        }
-
-        .leaderboard {
-            width: 100%;
-            max-width: 340px;
-            margin: 0 auto var(--gap);
-            text-align: center;
-        }
-
-        .game-center {
-            width: 100%;
-            max-width: 720px;
-            margin: 0 auto;
-            text-align: center;
-        }
-
-        .back-button-container {
-            position: static;
-            width: 100%;
-            text-align: center;
-            margin: 10px 0;
-        }
-
-        /* Desktop*/
-        @media (min-width: 768px) {
-        .game-grid {
-            padding-left: calc(var(--page-pad) + var(--lbw) + var(--gap));
-            padding-right: calc(var(--page-pad) + var(--lbw) + var(--gap)); /* ← symmetric */
-            min-height: 100vh;
-        }
-
-        .leaderboard {
-            position: fixed;
-            left: var(--page-pad);
-            top: 40px;
-            width: var(--lbw);
-            max-width: none;
-            text-align: left;
-            margin: 0;
-        }
-
-        .game-center {
-            max-width: 720px;
-            margin-inline: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin-top: 40px;
-        }
-
-        .back-button-container {
-            position: fixed;
-            top: 20px;
-            left: var(--page-pad);
-            width: auto;
-            text-align: left;
-            margin: 0;
-            z-index: 10;
-        }
-    }
-        .timer { font-size: 1.2em; color: #ff2e2e; }
-        ul { list-style: none; padding-left: 0; margin: 0; }
-        li { margin: 3px 0; }
+        body { margin:0; font-family:Arial; background:#121212; color:#fff; }
+        h1,h2 { margin:0; }
+        .card { background:#1e1e1e; padding:30px; border-radius:15px; max-width:500px; width:100%; box-shadow:0 0 20px rgba(0,0,0,0.5); margin:20px auto; text-align:center; }
+        input, select { padding:8px; border-radius:8px; border:none; width:70%; max-width:250px; margin:5px 0; }
+        button { padding:10px 20px; border:none; border-radius:8px; cursor:pointer; margin:5px; background:#ff5722; color:#fff; }
+        button:hover { background:#2196f3; }
+        .top-menu { display:flex; justify-content:center; gap:10px; margin-bottom:15px; flex-wrap: wrap; }
+        .section { display:none; margin-top:20px; text-align:left; background:#222; padding:15px; border-radius:12px; }
+        .section ul { list-style:none; padding:0; max-height:300px; overflow-y:auto; }
+        .section li { padding:5px 0; border-bottom:1px solid #333; }
+        .timer { font-size:1.2em; color:#ff5252; margin-top:10px; }
+        img { display:block; margin:10px auto; }
     </style>
 </head>
 <body>
-    {% if not game_started %}
-        <div class="flex-center">
-            <h1>❓ Guess the Number Game</h1>
+
+{% if intro %}
+<div class="card">
+    <h1>❓ Guess the Number</h1>
+    <form method="POST">
+        <input type="text" name="username" placeholder="Enter your name" maxlength="12" required>
+        <input type="hidden" name="form_type" value="start_guessing">
+        <button>Start</button>
+    </form>
+</div>
+{% else %}
+<div class="top-menu">
+    <form method="POST"><input type="hidden" name="form_type" value="go_back"><button>Back</button></form>
+    <button onclick="showSection('game')">Game</button>
+    <button onclick="showSection('leaderboard')">Leaderboard</button>
+    <button onclick="showSection('titles')">Titles</button>
+</div>
+
+<div class="card">
+    <div id="game-section" class="section" style="display:block;">
+        <h1>❓ Guess the Number</h1>
+        <p>Hello <strong>{{ username }}</strong></p>
+
+        <form method="POST">
+            <label>Difficulty:</label>
+            <select name="difficulty">
+                <option value="easy" {% if difficulty=='easy' %}selected{% endif %}>Easy 1-10 | 3 pts</option>
+                <option value="medium" {% if difficulty=='medium' %}selected{% endif %}>Medium 1-50 | 8 pts</option>
+                <option value="hard" {% if difficulty=='hard' %}selected{% endif %}>Hard 1-100 | 13 pts</option>
+                <option value="impossible" {% if difficulty=='impossible' %}selected{% endif %}>Impossible 1-1000 | 40 pts</option>
+            </select>
+            <button type="submit" name="form_type" value="set_difficulty">Set</button>
+        </form>
+
+        {% if not game_ready %}
             <form method="POST">
-                <input type="hidden" name="form_type" value="start_game">
-                <input type="text" name="username" placeholder="Enter your name" autocomplete="off" required>
-                <button type="submit">Play</button>
+                <input type="hidden" name="form_type" value="start_guessing">
+                <button>Start Game</button>
             </form>
-        </div>
-    {% else %}
-        <div class="game-grid">
-            <div class="leaderboard">
-                <h2>🏆 Leaderboard</h2>
-                {% if leaderboard %}
-                <ul>
-                    {% for name, score in leaderboard %}
-                        <li>{{ loop.index }}. {{ name }} - {{ score }} points</li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <p>No scores yet.</p>
-                {% endif %}
-            </div>
-
-            <div class="game-center">
-                <h1>❓ Guess the Number Game</h1>
-
-                <div class="back-button-container">
-                    <form method="POST">
-                        <input type="hidden" name="form_type" value="go_back">
-                        <button type="submit" style="background-color: #ff0000;">Back</button>
-                    </form>
-                </div>
-                
-                <p><strong>Hello!</strong> {{ username }}</p>
-
-                <form method="POST">
-                    <label>Choose difficulty:</label>
-                    <select name="difficulty">
-                        <option value="easy" {% if selected_difficulty == 'easy' %}selected{% endif %}>Easy(1-10)</option>
-                        <option value="medium" {% if selected_difficulty == 'medium' %}selected{% endif %}>Medium(1-50)</option>
-                        <option value="hard" {% if selected_difficulty == 'hard' %}selected{% endif %}>Hard(1-100)</option>
-                        <option value="impossible" {% if selected_difficulty == 'impossible' %}selected{% endif %}>Impossible(1-1000)</option>
-                    </select>
-                    <button type="submit" name="form_type" value="set_difficulty">Set Difficulty</button>
-                </form>
-
-                {% if not game_ready %}
-                    <form method="POST">
-                        <input type="hidden" name="form_type" value="start_guessing">
-                        <button type="submit">Start Game</button>
-                    </form>
-                {% else %}
-                    <form method="POST">
-                        <label for="guess">Your Guess:</label>
-                        <input type="number" name="guess" id="guess" required placeholder="Enter your guess">
-                        <button type="submit" name="form_type" value="make_guess">Guess</button>
-                    </form>
-                {% endif %}
-
-                <p>{{ message }}</p>
-                <p class="timer">⏱️ Time: <span id="timer">{{ timer }}</span> sec</p>
-                <p>Total Games: {{ totalGames }}</p>
-                <p>Correct Guesses: {{ correctGuesses }}</p>
-
-                {% if '✅' in message %}
-                    <img src="{{ url_for('static', filename='correct.gif') }}" width="200">
-                {% elif '❌' in message %}
-                    <img src="{{ url_for('static', filename='wrong.gif') }}" width="200">
-                {% endif %}
-            </div>
-        </div>
-
-        <audio id="winSound" src="{{ url_for('static', filename='win.mp3') }}"></audio>
-        <audio id="loseSound" src="{{ url_for('static', filename='lose.mp3') }}"></audio>
-
-        {% if game_ready %}
-        <script>
-            let seconds = parseInt(document.getElementById('timer').innerText);
-            setInterval(() => {
-                seconds += 1;
-                document.getElementById('timer').innerText = seconds;
-            }, 1000);
-        </script>
+        {% else %}
+            <form method="POST">
+                <label>Guess:</label>
+                <input type="hidden" name="form_type" value="make_guess">
+                <input type="number" name="guess" placeholder="Enter your guess" required>
+                <button>Guess</button>
+            </form>
         {% endif %}
-        
-        <script>
-            const winSound = document.getElementById('winSound');
-            const loseSound = document.getElementById('loseSound');
-            const message = "{{ message }}";
 
-            if (message.includes("✅")) {
-                winSound.loop = true;
-                winSound.play();
-            } else if (message.toLowerCase().includes("game over")) {
-                loseSound.loop = true;
-                loseSound.play();
-            }
+        <p>{{ message }}</p>
+        <p class="timer">⏱️ Time: <span id="timer">{{ timer }}</span> sec</p>
+        <p>Points: {{ points }} | Total Games: {{ total_games }}</p>
 
-            document.querySelectorAll("form").forEach(form => {
-                form.addEventListener("submit", function () {
-                    const formType = form.querySelector('input[name="form_type"]');
-                    if (formType) {
-                        const value = formType.value;
-                        if (value === "go_back" || value === "set_difficulty" || value === "start_guessing") {
-                            winSound.pause();
-                            winSound.currentTime = 0;
-                            loseSound.pause();
-                            loseSound.currentTime = 0;
-                        }
-                    }
-                });
-            });
-        </script>
-    {% endif %}
+        {% if '✅' in message %}
+            <img src="{{ url_for('static', filename='correct.gif') }}" width="200">
+        {% elif '❌' in message %}
+            <img src="{{ url_for('static', filename='wrong.gif') }}" width="200">
+        {% endif %}
+    </div>
+
+    <div id="leaderboard-section" class="section">
+        <h2>🏆 Leaderboard</h2>
+        <ul>
+            {% for name, score in leaderboard %}
+            <li>{{ loop.index }}. {% if get_title(score) %}[{{ get_title(score) }}] {% endif %}{{ name }} - {{ score }} points</li>
+            {% else %}
+            <li>No scores yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div id="titles-section" class="section">
+        <h2>Titles</h2>
+        <ul>
+            {% for title, pts in titles %}
+            <li>{{ title }} - {{ pts }} points</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<audio id="winSound" src="{{ url_for('static', filename='win.mp3') }}"></audio>
+<audio id="loseSound" src="{{ url_for('static', filename='lose.mp3') }}"></audio>
+<audio id="clickSound" src="{{ url_for('static', filename='click.mp3') }}"></audio>
+
+<script>
+function showSection(section) {
+    document.getElementById('game-section').style.display = 'none';
+    document.getElementById('leaderboard-section').style.display = 'none';
+    document.getElementById('titles-section').style.display = 'none';
+    if(section==='game') document.getElementById('game-section').style.display = 'block';
+    if(section==='leaderboard') document.getElementById('leaderboard-section').style.display = 'block';
+    if(section==='titles') document.getElementById('titles-section').style.display = 'block';
+}
+
+let seconds = parseInt(document.getElementById('timer').innerText);
+let timerInterval = setInterval(() => {
+    if(document.getElementById('game-section').style.display==='block'){
+        seconds += 1;
+        document.getElementById('timer').innerText = seconds;
+    }
+},1000);
+
+const winSound = document.getElementById('winSound');
+const loseSound = document.getElementById('loseSound');
+const clickSound = document.getElementById('clickSound');
+
+setInterval(() => {
+    const winGif = document.querySelector('img[src$="correct.gif"]');
+    const loseGif = document.querySelector('img[src$="wrong.gif"]');
+    if(winGif){ if(winSound.paused) winSound.play(); } else { winSound.pause(); winSound.currentTime=0; }
+    if(loseGif){ if(loseSound.paused) loseSound.play(); } else { loseSound.pause(); loseSound.currentTime=0; }
+},100);
+
+document.querySelectorAll("button").forEach(btn=>{
+    btn.addEventListener("click",()=>{ clickSound.currentTime=0; clickSound.play(); });
+});
+</script>
+
+{% endif %}
 </body>
 </html>

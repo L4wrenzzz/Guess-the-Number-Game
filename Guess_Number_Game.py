@@ -1,39 +1,10 @@
 from flask import Flask, render_template, request, session
-import random, os, time
+import random, os, time, json
 
 app = Flask(__name__)
 app.secret_key = 'secret001'
 
-def save_score(username, score):
-    scores = {}
-
-    if os.path.exists('leaderboard.txt'):
-        with open('leaderboard.txt', 'r') as file:
-            for line in file:
-                name, pts = line.strip().split(',')
-                scores[name] = int(pts)
-
-    if username in scores:
-        scores[username] += score
-    else:
-        scores[username] = score
-
-    with open('leaderboard.txt', 'w') as file:
-        for name, pts in scores.items():
-            file.write(f"{name},{pts}\n")
-
-def get_leaderboard():
-    try:
-        with open('leaderboard.txt', 'r') as file:
-            lines = file.readlines()
-        scores = [line.strip().split(',') for line in lines if ',' in line]
-        scores_dict = {}
-        for name, pts in scores:
-            scores_dict[name] = scores_dict.get(name, 0) + int(pts)
-        sorted_scores = sorted(scores_dict.items(), key=lambda x: x[1], reverse=True)
-        return sorted_scores[:100]
-    except FileNotFoundError:
-        return []
+LEADERBOARD_FILE = 'leaderboard.json'
 
 DIFFICULTY_SETTINGS = {
     'easy': {'max_number': 10, 'max_attempts': 3, 'points': 3},
@@ -42,130 +13,132 @@ DIFFICULTY_SETTINGS = {
     'impossible': {'max_number': 1000, 'max_attempts': 25, 'points': 40},
 }
 
-@app.route('/', methods=['GET', 'POST'])
+TITLES = [
+    ("Newbie", 10),
+    ("Rookie", 50),
+    ("Pro", 100),
+    ("Legend", 500),
+    ("Champion", 1000)
+]
+
+def save_score(username, points, won=False):
+    if os.path.exists(LEADERBOARD_FILE):
+        with open(LEADERBOARD_FILE, 'r') as f:
+            scores = json.load(f)
+    else:
+        scores = {}
+
+    if username not in scores:
+        scores[username] = {"points": 0, "correct_guesses": 0, "total_games": 0}
+
+    scores[username]["total_games"] += 1
+    if won:
+        scores[username]["points"] += points
+        scores[username]["correct_guesses"] += 1
+
+    with open(LEADERBOARD_FILE, 'w') as f:
+        json.dump(scores, f, indent=4)
+
+def get_leaderboard():
+    if not os.path.exists(LEADERBOARD_FILE):
+        return []
+    with open(LEADERBOARD_FILE, 'r') as f:
+        scores = json.load(f)
+    score_list = [(name, data.get("points",0)) for name,data in scores.items()]
+    score_list.sort(key=lambda x:x[1], reverse=True)
+    return score_list
+
+def reset_game():
+    settings = DIFFICULTY_SETTINGS[session['difficulty']]
+    session['random_number'] = random.randint(1, settings['max_number'])
+    session['attempts'] = 0
+    session['game_ready'] = False
+    session.pop('start_time', None)
+
+def check_guess(guess):
+    settings = DIFFICULTY_SETTINGS[session['difficulty']]
+    correct = session['random_number']
+    if guess < 1 or guess > settings['max_number']:
+        return f"⚠️ Please guess a number between 1 and {settings['max_number']}.", False
+    session['attempts'] += 1
+    if guess == correct:
+        time_taken = int(time.time() - session.get('start_time', time.time()))
+        session['points'] += settings['points']
+        session['total_games'] += 1
+        message = f"✅ Nice one, {session['username']}! You guessed it in {time_taken} seconds! The number was {correct}."
+        save_score(session['username'], settings['points'], won=True)
+        reset_game()
+        return message, True
+    elif session['attempts'] >= settings['max_attempts']:
+        session['total_games'] += 1
+        message = f"❌ Game over! The number was {correct}."
+        save_score(session['username'], settings['points'], won=False)
+        reset_game()
+        return message, True
+    else:
+        remaining = settings['max_attempts'] - session['attempts']
+        hint = "⬆️ Try higher number." if guess < correct else "⬇️ Try lower number."
+        return f"❌ Wrong! You have {remaining} attempts left. {hint}", False
+
+def init_session():
+    session.setdefault('username','')
+    session.setdefault('points',0)
+    session.setdefault('total_games',0)
+    session.setdefault('difficulty','easy')
+    session.setdefault('attempts',0)
+    session.setdefault('game_ready',False)
+
+def get_title(points):
+    for title, threshold in reversed(TITLES):
+        if points >= threshold:
+            return title
+    return ""
+
+@app.route('/', methods=['GET','POST'])
 def main():
+    init_session()
     message = ""
-    leaderboard = get_leaderboard()
-    timer = 0
-
-    for key, default in {
-        'totalGames': 0,
-        'correctGuesses': 0,
-        'points': 0,
-        'difficulty': 'easy',
-        'attempts': 0,
-        'username': '',
-        'game_started': False,
-        'game_ready': False,
-    }.items():
-        if key not in session:
-            session[key] = default
-
-    if session.get('start_time'):
-        timer = int(time.time() - session['start_time'])
-
-    if 'randomNumber' not in session:
-        settings = DIFFICULTY_SETTINGS[session['difficulty']]
-        session['randomNumber'] = random.randint(1, settings['max_number'])
-
     if request.method == 'POST':
         form_type = request.form.get('form_type')
-        session['username'] = request.form.get('username', session['username'])
 
         if form_type == 'go_back':
-            session['game_started'] = False
-            session['game_ready'] = False
-            session['difficulty'] = 'easy'
-            session['attempts'] = 0
-            session.pop('randomNumber', None)
-            session.pop('start_time', None)
-            return render_template('index.html', **get_template_context(message, leaderboard, timer))
+            session.clear()
+            return render_template('index.html', intro=True)
 
-        elif form_type == 'start_game':
-            session['game_started'] = True
-            session['game_ready'] = False
+        if not session.get('username'):
+            session['username'] = request.form.get('username','').strip()[:12]
 
-        elif form_type == 'set_difficulty':
-            selected = request.form.get('difficulty', 'easy')
-            session['difficulty'] = selected
-            session['attempts'] = 0
-            session['game_ready'] = False
-            message = f"Difficulty set to {selected.capitalize()}. Click Start Game to begin."
-
-        elif form_type == 'start_guessing':
-            settings = DIFFICULTY_SETTINGS[session['difficulty']]
-            session['randomNumber'] = random.randint(1, settings['max_number'])
-            session['attempts'] = 0
+        if form_type == 'start_guessing':
+            reset_game()
             session['start_time'] = time.time()
             session['game_ready'] = True
-            message = f"Game started! Guess a number between 1 and {settings['max_number']}."
-
         elif form_type == 'make_guess':
             try:
-                settings = DIFFICULTY_SETTINGS[session['difficulty']]
                 guess = int(request.form['guess'])
-                correct = session['randomNumber']
-
-                if guess < 1 or guess > settings['max_number']:
-                    message = f"⚠️ Please guess a number between 1 and {settings['max_number']}."
-                    return render_template("index.html",
-                        correctGuesses=session.get('correctGuesses', 0),
-                        game_started=True,
-                        game_ready=True,
-                        leaderboard=get_leaderboard(),
-                        message=message,
-                        selected_difficulty=session.get('difficulty'),
-                        timer=timer,
-                        totalGames=session.get('totalGames', 0),
-                        username=session.get('username'),
-                    )
-                
-                session['attempts'] += 1
-
-                if guess == correct:
-                    timeTaken = int(time.time() - session.get('start_time', time.time()))
-                    session['correctGuesses'] += 1
-                    session['points'] += settings['points']
-                    session['totalGames'] += 1
-                    message = f"✅ Nice one, {session['username']}! You guessed it in {timeTaken} seconds! The number was {correct}."
-                    save_score(session['username'], session['points'])
-                    session['game_ready'] = False
-                    session.pop('start_time', None)
-                    session['randomNumber'] = random.randint(1, settings['max_number'])
-                    session['attempts'] = 0
-
-                elif session['attempts'] >= settings['max_attempts']:
-                    message = f"Game over! The number was {correct}."
-                    session['totalGames'] += 1
-                    session['game_ready'] = False
-                    session.pop('start_time', None)
-                    session['randomNumber'] = random.randint(1, settings['max_number'])
-                    session['attempts'] = 0
-
-                else:
-                    remaining = settings['max_attempts'] - session['attempts']
-                    hint = "⬆️ Try higher number." if guess < correct else "⬇️ Try lower number."
-                    message = f"❌ Wrong! You have {remaining} attempts left. {hint}"
-
+                message, _ = check_guess(guess)
             except ValueError:
                 message = "⚠️ Please enter a valid number."
+        elif form_type == 'set_difficulty':
+            session['difficulty'] = request.form.get('difficulty','easy')
+            message = f"Difficulty set to {session['difficulty'].capitalize()}. Click Start Game to begin."
 
-    return render_template('index.html', **get_template_context(message, leaderboard, timer))
+    leaderboard = get_leaderboard()
+    intro = False if session.get('username') else True
+    timer = int(time.time() - session.get('start_time', time.time())) if session.get('start_time') else 0
 
-def get_template_context(message, leaderboard, timer):
-    return {
-        'attempts': session['attempts'],
-        'correctGuesses': session['correctGuesses'],
-        'game_started': session['game_started'],
-        'game_ready': session['game_ready'],
-        'leaderboard': leaderboard,
-        'message': message,
-        'selected_difficulty': session['difficulty'],
-        'totalGames': session['totalGames'],
-        'timer': timer,
-        'username': session['username'],
-    }
+    return render_template('index.html',
+        intro=intro,
+        username=session.get('username',''),
+        points=session.get('points',0),
+        total_games=session.get('total_games',0),
+        difficulty=session.get('difficulty','easy'),
+        game_ready=session.get('game_ready',False),
+        leaderboard=leaderboard,
+        message=message,
+        get_title=get_title,
+        titles=TITLES,
+        timer=timer
+    )
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(debug=True)
