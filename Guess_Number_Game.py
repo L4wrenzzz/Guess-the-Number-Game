@@ -1,13 +1,17 @@
 from flask import Flask, render_template, request, session
-import random, os, time, json
+import random, os, time
 from dotenv import load_dotenv
+from supabase import create_client, Client
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
-LEADERBOARD_FILE = 'leaderboard.json'
+url: str = os.environ.get("SUPABASE_URL")
+key: str = os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(url, key)
+
 
 DIFFICULTY_SETTINGS = {
     'easy': {'max_number': 10, 'max_attempts': 3, 'points': 3},
@@ -24,34 +28,35 @@ TITLES = [
     ("Champion", 3000)
 ]
 
-def load_scores():
-    if not os.path.exists(LEADERBOARD_FILE):
-        return {}
+def save_score(username, points_to_add, won=False):
     try:
-        with open(LEADERBOARD_FILE, 'r') as f:
-            content = f.read()
-            if not content:
-                return {}
-            return json.loads(content)
-    except (json.JSONDecodeError, FileNotFoundError):
-        return {}
+        response = supabase.table('leaderboard').select('points', 'correct_guesses', 'total_games').eq('username', username).execute()
+        
+        current_data = response.data[0] if response.data else {
+            'points': 0, 'correct_guesses': 0, 'total_games': 0
+        }
 
-def save_score(username, points, won=False):
-    scores = load_scores()
-    if username not in scores:
-        scores[username] = {"points": 0, "correct_guesses": 0, "total_games": 0}
-    scores[username]["total_games"] += 1
-    if won:
-        scores[username]["points"] += points
-        scores[username]["correct_guesses"] += 1
-    with open(LEADERBOARD_FILE, 'w') as f:
-        json.dump(scores, f, indent=4)
+        new_total_games = current_data['total_games'] + 1
+        new_points = current_data['points'] + points_to_add
+        new_correct_guesses = current_data['correct_guesses'] + (1 if won else 0)
+
+        supabase.table('leaderboard').upsert({
+            'username': username,
+            'points': new_points,
+            'correct_guesses': new_correct_guesses,
+            'total_games': new_total_games
+        }).execute()
+
+    except Exception as e:
+        print(f"Error saving score: {e}")
 
 def get_leaderboard():
-    scores = load_scores()
-    score_list = [(name, data.get("points", 0)) for name, data in scores.items()]
-    score_list.sort(key=lambda x: x[1], reverse=True)
-    return score_list
+    try:
+        response = supabase.table('leaderboard').select('username', 'points').order('points', desc=True).limit(100).execute()
+        return [(player['username'], player['points']) for player in response.data]
+    except Exception as e:
+        print(f"Error getting leaderboard: {e}")
+        return []
 
 def reset_game():
     settings = DIFFICULTY_SETTINGS[session['difficulty']]
@@ -113,34 +118,45 @@ def main():
         if form_type == 'go_back':
             session.clear()
             return render_template('index.html', intro=True)
+        
         if form_type == 'set_username':
             session['username'] = request.form.get('username', '').strip()[:12]
-            scores = load_scores()
-            if session['username'] in scores:
-                user_data = scores[session['username']]
-                session['points'] = user_data.get('points', 0)
-                session['total_games'] = user_data.get('total_games', 0)
-                session['correct_guesses'] = user_data.get('correct_guesses', 0)
-            else:
-                session['points'] = 0
-                session['total_games'] = 0
-                session['correct_guesses'] = 0
+
+            try:
+                response = supabase.table('leaderboard').select('*').eq('username', session['username']).execute()
+                if response.data:
+                    user_data = response.data[0]
+                    session['points'] = user_data.get('points', 0)
+                    session['total_games'] = user_data.get('total_games', 0)
+                    session['correct_guesses'] = user_data.get('correct_guesses', 0)
+                else:
+                    session['points'] = 0
+                    session['total_games'] = 0
+                    session['correct_guesses'] = 0
+            except Exception as e:
+                print(f"Error loading user data: {e}")
+                session['points'], session['total_games'], session['correct_guesses'] = 0, 0, 0
+
             session['game_ready'] = False
+
         if form_type == 'start_guessing':
             reset_game()
             session['start_time'] = time.time()
             session['game_ready'] = True
             session['guess_history'] = []
+
         elif form_type == 'make_guess':
             try:
                 guess = int(request.form['guess'])
                 message = check_guess(guess)
             except ValueError:
                 message = "⚠️ Please enter a valid number."
+        
         elif form_type == 'set_difficulty':
             session['difficulty'] = request.form.get('difficulty', 'easy')
             reset_game()
             message = f"Difficulty set to {session['difficulty'].capitalize()}. Click Start Game to begin."
+
     leaderboard = get_leaderboard()
     intro = False if session.get('username') else True
     timer = int(time.time() - session['start_time']) if session.get('start_time') and session.get('game_ready') else 0
