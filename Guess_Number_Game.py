@@ -79,7 +79,7 @@ def check_guess(guess):
         session['points'] += settings['points']
         session['total_games'] += 1
         session['correct_guesses'] += 1
-        message = f"✅ Nice one, {session['username']}!\nYou guessed it in {time_taken} seconds!\nThe number was {correct}."
+        message = f"✅ Nice one, {session['username']}! You guessed it in {time_taken} seconds! The number was {correct}."
         save_score(session['username'], settings['points'], won=True)
         reset_game()
         return message

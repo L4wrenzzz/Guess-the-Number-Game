@@ -104,33 +104,16 @@
             font-weight: 600;
             padding-right: 8px;
         }
-        .title-Newbie {
-            color: #b0bec5;
-            text-shadow: 0 0 5px rgba(176, 190, 197, 0.5);
-        }
-        .title-Rookie {
-            color: #15ff00;
-            text-shadow: 0 0 6px #15ff00;
-        }
-        .title-Pro {
-            color: #ff00ea;
-            text-shadow: 0 0 7px #ff00ea;
-        }
-        .title-Legend {
-            color: #ff0000;
-            text-shadow: 0 0 8px #ff0000;
-        }
-        .title-Champion {
-            color: #eaff00;
-            text-shadow: 0 0 10px #eaff00;
-            animation: champion-glow 2s infinite alternate;
-        }
+        .title-Newbie { color: #b0bec5; text-shadow: 0 0 5px rgba(176, 190, 197, 0.5); }
+        .title-Rookie { color: #4dd0e1; text-shadow: 0 0 6px rgba(77, 208, 225, 0.6); }
+        .title-Pro { color: #ffd54f; text-shadow: 0 0 7px rgba(255, 213, 79, 0.7); }
+        .title-Legend { color: #ba68c8; text-shadow: 0 0 8px rgba(186, 104, 200, 0.8); }
+        .title-Champion { color: #ff8a65; text-shadow: 0 0 10px rgba(255, 138, 101, 0.9); animation: champion-glow 2s infinite alternate; }
         
         @keyframes champion-glow {
             from { text-shadow: 0 0 8px rgba(255, 138, 101, 0.7); }
             to { text-shadow: 0 0 16px rgba(255, 138, 101, 1); }
         }
-
     </style>
 </head>
 <body>
@@ -147,10 +130,10 @@
 {% else %}
 <div class="top-menu">
     <form method="POST"><input type="hidden" name="form_type" value="go_back"><button>Back</button></form>
-    <button onclick="showSection('game')">Game</button>
-    <button onclick="showSection('stats')">Stats</button>
-    <button onclick="showSection('leaderboard')">Leaderboard</button>
-    <button onclick="showSection('titles')">Titles</button>
+    <button data-section="game">Game</button>
+    <button data-section="stats">Stats</button>
+    <button data-section="leaderboard">Leaderboard</button>
+    <button data-section="titles">Titles</button>
 </div>
 
 <div class="card">
@@ -246,25 +229,61 @@
 <audio id="clickSound" src="{{ url_for('static', filename='click.mp3') }}"></audio>
 
 <script>
-    // Script remains the same
-    const gameReady = {{ game_ready | tojson }};
-    let seconds = {{ timer | tojson }};
-    const timerElement = document.getElementById('timer');
+    document.addEventListener('DOMContentLoaded', () => {
 
-    function startTimer() { if (gameReady) { setInterval(() => { seconds++; timerElement.innerText = seconds; }, 1000); } }
-    window.onload = startTimer;
+        const showSection = (sectionId) => {
+            document.querySelectorAll('.section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(sectionId + '-section').style.display = 'block';
+        };
 
-    function showSection(sectionId) {
-        document.querySelectorAll('.section').forEach(section => { section.style.display = 'none'; });
-        document.getElementById(sectionId + '-section').style.display = 'block';
-    }
+        document.querySelectorAll('.top-menu button[data-section]').forEach(button => {
+            button.addEventListener('click', () => showSection(button.dataset.section));
+        });
 
-    const winSound = document.getElementById('winSound');
-    const loseSound = document.getElementById('loseSound');
-    const clickSound = document.getElementById('clickSound');
+        const clickSound = document.getElementById('clickSound');
+        document.querySelectorAll("button").forEach(btn => {
+            btn.addEventListener("click", () => {
+                clickSound.currentTime = 0;
+                clickSound.play().catch(e => {});
+            });
+        });
 
-    if ("{{ message }}".includes('✅')) { winSound.play(); } else if ("{{ message }}".includes('❌')) { loseSound.play(); }
-    document.querySelectorAll("button").forEach(btn => { btn.addEventListener("click", () => { clickSound.currentTime = 0; clickSound.play(); }); });
+        const gameReady = {{ game_ready | tojson }};
+        if (gameReady) {
+            let seconds = {{ timer | tojson }};
+            const timerElement = document.getElementById('timer');
+            setInterval(() => {
+                seconds++;
+                timerElement.innerText = seconds;
+            }, 1000);
+        }
+
+        const winSound = document.getElementById('winSound');
+        const loseSound = document.getElementById('loseSound');
+        
+        const message = "{{ message }}"; 
+
+        if (message.includes('✅')) {
+            winSound.loop = true;
+            let playPromise = winSound.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("Autoplay was prevented. Playing on first click.");
+                    document.body.addEventListener('click', () => winSound.play(), { once: true });
+                });
+            }
+        } else if (message.includes('❌')) {
+            let playPromise = loseSound.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("Autoplay was prevented. Playing on first click.");
+                    document.body.addEventListener('click', () => loseSound.play(), { once: true });
+                });
+            }
+        }
+    });
 </script>
 {% endif %}
 </body>
