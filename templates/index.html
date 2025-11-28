@@ -3,6 +3,7 @@
 <head>
     <title>Guess It</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -94,7 +95,15 @@
             transition: 0.3s;
         }
         
-        select { font-family: 'Roboto Mono', monospace; font-size: 0.9em; }
+        select { 
+            font-family: 'Roboto Mono', monospace; 
+            font-size: 0.9em; 
+            /* Fix for text overflowing on mobile */
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        
         option { background-color: #16213e; color: #fff; }
         input:focus { border-color: var(--accent); }
 
@@ -164,6 +173,7 @@
             align-items: center;
             justify-content: center;
             vertical-align: middle;
+            white-space: nowrap; /* Keep titles on one line */
         }
         
         /* 2. & 3. Color Classes for Text (Usernames & Points) */
@@ -245,8 +255,62 @@
         @keyframes glow-purple { from { box-shadow: 0 0 5px #9c27b0; } to { box-shadow: 0 0 15px #e040fb; } }
 
         ul { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
-        li { padding: 12px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; }
+        
+        /* DEFAULT LIST ITEM STYLING (Leaderboard) */
+        li { 
+            padding: 12px; 
+            border-bottom: 1px solid var(--glass-border); 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 10px;
+        }
         li:last-child { border: none; }
+
+        /* --- SPECIFIC STYLING FOR TITLES SYSTEM (ALIGNMENT FIX) --- */
+        #section-titles li {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr; /* Left (Space) | Center (Content) | Right (Space) - No, we want Badge | Sep | Text */
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 15px;
+            justify-content: stretch;
+        }
+        
+        /* Align Badge to the Right of the left column */
+        #section-titles li > span:first-child {
+            justify-self: end;
+        }
+        
+        /* Align Dash to Center */
+        #section-titles li > span:nth-child(2) {
+            justify-self: center;
+            color: #888;
+        }
+        
+        /* Align Description to Left of the right column */
+        #section-titles li > :last-child {
+            justify-self: start;
+            text-align: left;
+        }
+
+        /* MOBILE ADJUSTMENTS */
+        @media (max-width: 480px) {
+            .card { padding: 20px; }
+            li { padding: 10px 5px; font-size: 0.9em; }
+            .player-title { font-size: 0.7em; padding: 2px 6px; }
+            .game-title-text { font-size: 1.5em; }
+            
+            /* Prevent iOS zoom on inputs/selects */
+            input, select {
+                font-size: 16px !important;
+            }
+            
+            /* Titles alignment on very small screens - reduce gap */
+            #section-titles li {
+                gap: 8px;
+            }
+        }
         
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         .stat-item { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; }
@@ -326,16 +390,16 @@
         <div id="section-titles" class="hidden">
             <h2>🏅 Titles System</h2>
             <ul>
-                <li style="justify-content: center;">
+                <li>
                     <span class="player-title title-THE-ONE"><span>THE ONE</span></span> 
-                    <span style="margin: 0 12px; color: #666;">-</span> 
-                    Top #1 Highest points
+                    <span>-</span> 
+                    <span>Top #1 Highest points</span>
                 </li>
                 {% for title, pts in titles|reverse %}
-                <li style="justify-content: center;">
+                <li>
                     <span class="player-title title-{{ title|replace(' ', '-') }}">{{ title }}</span> 
-                    <span style="margin: 0 12px; color: #666;">-</span> 
-                    {{ "{:,}".format(pts) }} points
+                    <span>-</span> 
+                    <span>{{ "{:,}".format(pts) }} points</span>
                 </li>
                 {% endfor %}
             </ul>
@@ -524,10 +588,8 @@
         const data = await res.json();
         const winRate = data.total_games > 0 ? ((data.correct_guesses/data.total_games)*100).toFixed(1) : 0;
         
-        let titleHtml = `<span class="player-title title-${data.title.replace(' ', '-')}"><span>${data.title}</span></span>`;
-
+        // Removed Title Display from here
         document.getElementById('stats-content').innerHTML = `
-            <div style="margin-bottom: 20px;">Current Title: ${titleHtml}</div>
             <div class="stats-grid">
                 <div class="stat-item"><div class="stat-val">${data.points.toLocaleString()}</div><div class="stat-label">Points</div></div>
                 <div class="stat-item"><div class="stat-val">${data.total_games}</div><div class="stat-label">Games</div></div>
@@ -552,14 +614,14 @@
             const textClass = 'text-' + rankClass;
 
             li.innerHTML = `
-                <div style="display:flex; align-items:center;">
-                    <span style="width: 30px; font-weight:bold; color: #888;">${index + 1}.</span>
-                    <div style="text-align:left;">
+                <div style="display:flex; align-items:center; min-width: 0;">
+                    <span style="width: 30px; font-weight:bold; color: #888; flex-shrink: 0;">${index + 1}.</span>
+                    <div style="text-align:left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center;">
                         <span class="player-title title-${rankClass}"><span>${player.title}</span></span>
-                        <strong class="${textClass}">${player.username}</strong>
+                        <strong class="${textClass}" style="margin-left: 8px;">${player.username}</strong>
                     </div>
                 </div>
-                <span class="${textClass}" style="font-weight:bold;">${player.points.toLocaleString()} pts</span>
+                <span class="${textClass}" style="font-weight:bold; white-space: nowrap; margin-left: auto;">${player.points.toLocaleString()} pts</span>
             `;
             list.appendChild(li);
         });
