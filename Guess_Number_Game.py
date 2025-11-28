@@ -12,7 +12,6 @@ url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
-# Difficulty Settings
 DIFFICULTY_SETTINGS = {
     'easy':       {'max_number': 10,        'max_attempts': 3,  'points': 3},
     'medium':     {'max_number': 100,       'max_attempts': 8,  'points': 12},
