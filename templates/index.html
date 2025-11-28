@@ -1,290 +1,575 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Guess the Number</title>
+    <title>Guess It</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #1a1a2e;
-            --card-color: #16213e;
-            --primary-purple: #9a4ef2;
-            --hover-purple: #a966f5;
-            --text-color: #e0e0e0;
-            --border-color: #4a4a68;
-            --font-family: 'Poppins', sans-serif;
+            --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary: #00f260;
+            --primary-gradient: linear-gradient(to right, #0575E6, #021B79);
+            --accent: #0575E6;
+            --text: #ffffff;
+            --font: 'Poppins', sans-serif;
         }
-        * { box-sizing: border-box; }
+
         body {
             margin: 0;
-            font-family: var(--font-family);
-            background-color: var(--bg-color);
-            color: var(--text-color);
-        }
-        h1, h2 { margin: 0; color: #fff; }
-        p { line-height: 1.6; }
-        .card {
-            background: var(--card-color);
-            padding: 30px;
-            border-radius: 20px;
-            max-width: 550px;
-            width: 95%;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
-            margin: 20px auto;
-            text-align: center;
-            border: 1px solid var(--border-color);
-        }
-        input, select {
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            width: 100%;
-            margin: 8px 0;
-            font-family: var(--font-family);
-            font-size: 1em;
-        }
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            margin: 8px 0;
-            background: var(--primary-purple);
-            color: #fff;
-            font-family: var(--font-family);
-            font-weight: 600;
-            font-size: 1em;
-            transition: all 0.2s ease-in-out;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-            width: 100%;
-        }
-        button:hover {
-            background: var(--hover-purple);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(154, 78, 242, 0.4);
-        }
-        .top-menu { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        .top-menu button, .top-menu form { width: auto; }
-        
-        .section { display: none; margin-top: 20px; text-align: left; background: var(--bg-color); padding: 20px; border-radius: 15px; }
-        .section ul { list-style: none; padding: 0; max-height: 300px; overflow-y: auto; }
-        .section li { padding: 8px 0; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; flex-wrap: wrap; }
-        .stats-box { border-top: 1px solid var(--border-color); margin-top: 15px; padding-top: 15px; }
-
-        .difficulty-container {
+            font-family: var(--font);
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
-        }
-        .difficulty-container label { flex-shrink: 0; margin-bottom: 0; }
-        .difficulty-container select { width: auto; flex-grow: 1; margin: 0; }
-        .difficulty-container button { width: auto; flex-shrink: 0; margin: 0; }
-        
-        @media (max-width: 520px) {
-            .difficulty-container { flex-direction: column; }
-            .difficulty-container select, .difficulty-container button { width: 100%; }
-        }
-        
-        .timer { font-size: 1.2em; color: var(--primary-purple); font-weight: 600; margin-top: 10px; }
-        img { display: block; margin: 15px auto; border-radius: 10px; }
-        .game-message {
-            font-weight: 600;
-            font-size: 1.1em;
-            white-space: pre-wrap;
+            justify-content: center;
         }
 
-        .player-title {
-            font-weight: 600;
-            padding-right: 8px;
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .title-Newbie { color: #b0bec5; text-shadow: 0 0 5px rgba(176, 190, 197, 0.5); }
-        .title-Rookie { color: #4dd0e1; text-shadow: 0 0 6px rgba(77, 208, 225, 0.6); }
-        .title-Pro { color: #ffd54f; text-shadow: 0 0 7px rgba(255, 213, 79, 0.7); }
-        .title-Legend { color: #ba68c8; text-shadow: 0 0 8px rgba(186, 104, 200, 0.8); }
-        .title-Champion { color: #ff8a65; text-shadow: 0 0 10px rgba(255, 138, 101, 0.9); animation: champion-glow 2s infinite alternate; }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            border-radius: 24px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        /* HEADER */
+        .header-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .logo { width: 80px; height: auto; display: block; }
+        .game-title-text {
+            font-size: 2em;
+            font-weight: 800;
+            background: linear-gradient(to right, #fff 0%, #aaa 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            background-image: linear-gradient(to right, #fff 0%, #aaa 40%, #ffffff 50%, #aaa 60%, #fff 100%);
+            background-size: 200% auto;
+            animation: shine 3s linear infinite;
+        }
+
+        @keyframes shine {
+            0% { background-position: -200% center; }
+            40% { background-position: 200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        h2 { border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin-bottom: 20px; }
+
+        input, select {
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: #16213e; 
+            color: #fff;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 16px;
+            margin-bottom: 15px;
+            outline: none;
+            transition: 0.3s;
+        }
         
-        @keyframes champion-glow {
-            from { text-shadow: 0 0 8px rgba(255, 138, 101, 0.7); }
-            to { text-shadow: 0 0 16px rgba(255, 138, 101, 1); }
+        select { font-family: 'Roboto Mono', monospace; font-size: 0.9em; }
+        option { background-color: #16213e; color: #fff; }
+        input:focus { border-color: var(--accent); }
+
+        button {
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            background: var(--primary-gradient);
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 10px;
         }
+        button:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        button.secondary { background: rgba(255,255,255,0.1); }
+        
+        button.quit { 
+            background: linear-gradient(to right, #cb2d3e, #ef473a); 
+            font-size: 0.9em;
+            padding: 10px;
+            width: auto;
+            min-width: 100px;
+            margin-top: 15px;
+        }
+
+        .hidden { display: none !important; }
+
+        .top-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 25px; }
+        .top-menu button { width: 100%; margin: 0; font-size: 14px; padding: 10px; }
+        
+        .game-message { 
+            font-size: 1.1em; 
+            min-height: 50px; 
+            margin: 20px 0; 
+            padding: 15px; 
+            border-radius: 10px; 
+            background: rgba(0,0,0,0.2); 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer { font-size: 2em; font-weight: 800; color: #ff5252; margin: 10px 0; text-shadow: 0 0 10px rgba(255, 82, 82, 0.5); }
+        .history { font-size: 0.9em; color: #ccc; letter-spacing: 1px; }
+
+        .player-info-container {
+            margin-bottom: 15px; 
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        /* Titles Styling */
+        .player-title { 
+            font-weight: 800; 
+            padding: 4px 10px; 
+            border-radius: 4px; 
+            font-size: 0.85em; 
+            text-transform: uppercase; 
+            line-height: 1.2; 
+            display: inline-flex; 
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+        }
+        
+        /* 2. & 3. Color Classes for Text (Usernames & Points) */
+        .text-Newbie { color: #b0bec5; }
+        .text-Rookie { color: #4dd0e1; }
+        .text-Pro { color: #ffca28; }
+        .text-Legend { color: #e040fb; text-shadow: 0 0 5px rgba(224, 64, 251, 0.4); }
+        .text-Champion { color: #ffab00; text-shadow: 0 0 8px rgba(255, 171, 0, 0.6); }
+        .text-THE-ONE { color: #ff5722; text-shadow: 0 0 10px #ff3d00; font-weight: 900; }
+
+        .title-Newbie { background: #607d8b; color: #fff; }
+        .title-Rookie { background: #00bcd4; color: #fff; }
+        .title-Pro { background: #ffc107; color: #000; }
+        .title-Legend { background: #9c27b0; color: #fff; box-shadow: 0 0 10px #9c27b0; animation: glow-purple 2s infinite alternate; }
+        
+        .title-Champion { 
+            background: linear-gradient(45deg, #FFD700, #ff8c00); 
+            color: #000; 
+            box-shadow: 0 0 15px #FFD700; 
+            animation: breathe 3s ease-in-out infinite; 
+            border: 1px solid #fff;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 15px #FFD700; }
+            50% { transform: scale(1.05); box-shadow: 0 0 25px #FFD700; }
+        }
+
+        /* 1. THE ONE - CONTINUOUS SINGLE SNAKE EFFECT */
+        .title-THE-ONE {
+            position: relative;
+            background: #000;
+            color: #FF5722;
+            overflow: hidden;
+            text-shadow: 0 0 5px #FF5722;
+            /* No border here, the pseudo-elements handle it */
+            z-index: 0;
+        }
+
+        /* This pseudo-element spins behind the content to create the border effect */
+        .title-THE-ONE::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 150%; height: 500%; /* Large enough to cover corners during rotation */
+            
+            /* Conic gradient: mostly transparent, with a "tail" of color */
+            background: conic-gradient(
+                transparent 70%, 
+                #FF5722 90%, 
+                #FFFF00 100%
+            );
+            
+            transform: translate(-50%, -50%);
+            animation: rotate-snake 4s linear infinite;
+            z-index: -2;
+        }
+
+        /* This creates the inner dark background to mask the center of the spinning gradient */
+        .title-THE-ONE::after {
+            content: '';
+            position: absolute;
+            inset: 2px; /* Controls border thickness */
+            background: #220500;
+            z-index: -1;
+            border-radius: 2px;
+        }
+
+        /* Ensure text sits on top */
+        .title-THE-ONE span {
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes rotate-snake {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes glow-purple { from { box-shadow: 0 0 5px #9c27b0; } to { box-shadow: 0 0 15px #e040fb; } }
+
+        ul { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
+        li { padding: 12px; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; }
+        li:last-child { border: none; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .stat-item { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; }
+        .stat-val { font-size: 1.5em; font-weight: bold; color: var(--accent); }
+        .stat-label { font-size: 0.8em; opacity: 0.7; }
+
     </style>
 </head>
 <body>
 
-{% if intro %}
-<div class="card">
-    <h1>❓ Guess the Number</h1>
-    <form method="POST">
-        <input type="text" name="username" placeholder="Enter your name (12 characters max)" maxlength="12" required autofocus>
-        <input type="hidden" name="form_type" value="set_username">
-        <button>Next</button>
-    </form>
-</div>
-{% else %}
-<div class="top-menu">
-    <form method="POST"><input type="hidden" name="form_type" value="go_back"><button>Back</button></form>
-    <button data-section="game">Game</button>
-    <button data-section="stats">Stats</button>
-    <button data-section="leaderboard">Leaderboard</button>
-    <button data-section="titles">Titles</button>
-</div>
-
-<div class="card">
-    <h1 style="text-align: center;">❓ Guess the Number</h1>
-    <p style="text-align: center;">Player: <strong>{{ username }}</strong></p>
-
-    <div id="game-section" class="section" style="display:block;">
-        <form method="POST" class="difficulty-container">
-            <label>Difficulty:</label>
-            <select name="difficulty">
-                <option value="easy" {% if difficulty=='easy' %}selected{% endif %}>Easy 1-10 | 3 pts</option>
-                <option value="medium" {% if difficulty=='medium' %}selected{% endif %}>Medium 1-50 | 9 pts</option>
-                <option value="hard" {% if difficulty=='hard' %}selected{% endif %}>Hard 1-100 | 17 pts</option>
-                <option value="impossible" {% if difficulty=='impossible' %}selected{% endif %}>Impossible 1-1000 | 40 pts</option>
-            </select>
-            <button type="submit" name="form_type" value="set_difficulty">Set</button>
-        </form>
-
-        {% if not game_ready %}
-            <form method="POST" style="text-align: center;">
-                <input type="hidden" name="form_type" value="start_guessing">
-                <button>Start Game</button>
-            </form>
-        {% else %}
-            <form method="POST" style="text-align: center;">
-                <label>Guess:</label>
-                <input type="number" name="guess" placeholder="Enter your guess number" required autofocus style="width: auto; max-width: 200px;">
-                <input type="hidden" name="form_type" value="make_guess">
-                <button style="width: auto;">Guess</button>
-            </form>
-        {% endif %}
-
-        <p class="game-message" style="text-align: center;">{{ message }}</p>
-
-        {% if game_ready and guess_history %}
-            <p style="text-align: center;">Your Guesses: {{ guess_history | join(', ') }}</p>
-        {% endif %}
-
-        <p class="timer" style="text-align: center;">⏱️ Time: <span id="timer">{{ timer }}</span> sec</p>
-
-        {% if '✅' in message %}
-            <img src="{{ url_for('static', filename='correct.gif') }}" width="200">
-        {% elif '❌' in message %}
-            <img src="{{ url_for('static', filename='wrong.gif') }}" width="200">
-        {% endif %}
-    </div>
-
-    <div id="stats-section" class="section">
-        <h2>📊 Player Stats</h2>
-        <div class="stats-box" style="border-top: none; padding-top: 0;">
-            <p><strong>Total Points:</strong> {{ points }}</p>
-            <p><strong>Total Games Played:</strong> {{ total_games }}</p>
-            {% if total_games > 0 %}
-                {% set win_rate = (correct_guesses / total_games * 100) | round(1) %}
-                <p><strong>Correct Guesses:</strong> {{ correct_guesses }}</p>
-                <p><strong>Win Rate:</strong> {{ win_rate }}%</p>
-            {% else %}
-                 <p>Play a game to see your stats!</p>
-            {% endif %}
+    <div id="login-screen" class="card fade-in {% if username %}hidden{% endif %}">
+        <div class="header-container">
+            <img src="{{ url_for('static', filename='guessLogo.png') }}" class="logo" alt="Logo">
+            <span class="game-title-text">Guess It</span>
         </div>
+        <input type="text" id="username-input" placeholder="Enter Username (max 12 & no special characters)" maxlength="12" 
+               oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')">
+        <button onclick="handleLogin()">Play</button>
     </div>
 
-    <div id="leaderboard-section" class="section">
-        <h2>🏆 Leaderboard</h2>
-        <ul>
-            {% for name, score in leaderboard %}
-            <li>
-                {{ loop.index }}.&nbsp;
-                {% set player_title = get_title(score) %}
-                {% if player_title %}
-                    <span class="player-title title-{{ player_title }}">{{ player_title }}</span>
-                {% endif %}
-                {{ name }} - {{ score }} points
-            </li>
-            {% else %}
-            <li>No scores yet.</li>
-            {% endfor %}
-        </ul>
+    <div id="main-screen" class="card fade-in {% if not username %}hidden{% endif %}">
+        
+        <div class="header-container">
+            <img src="{{ url_for('static', filename='guessLogo.png') }}" class="logo" alt="Logo">
+            <span class="game-title-text">Guess It</span>
+        </div>
+
+        <div class="top-menu">
+            <button class="secondary" onclick="showSection('game')">🎮 Game</button>
+            <button class="secondary" onclick="loadStats()">📊 Stats</button>
+            <button class="secondary" onclick="loadLeaderboard()">🏆 Leaderboard</button>
+            <button class="secondary" onclick="showSection('titles')">🏅 Titles</button>
+        </div>
+
+        <div class="player-info-container">
+            <span>Player:</span>
+            <span id="display-title" class="player-title title-{{ user_title|replace(' ', '-') }}"><span>{{ user_title }}</span></span> 
+            <strong id="display-username" class="text-{{ user_title|replace(' ', '-') }}">{{ username }}</strong>
+        </div>
+
+        <div id="section-game">
+            <div class="difficulty-select">
+                <select id="difficulty-select" onchange="setDifficulty()">
+                    <option value="easy">      Easy (1-10)      |  3 attempts |   3 points</option>
+                    <option value="medium">    Medium (1-100)    |  8 attempts |  12 points</option>
+                    <option value="hard">      Hard (1-1k)       | 20 attempts |  40 points</option>
+                    <option value="impossible">Impossible (1-100k) | 35 attempts | 100 points</option>
+                    <option value="million">   1 Million (1-1m)  | 100 attempts| 999 points</option>
+                </select>
+            </div>
+
+            <div id="start-btn-container">
+                <button onclick="startGame()">Start</button>
+            </div>
+
+            <div id="game-interface" class="hidden">
+                <div class="timer"><span id="timer">0</span>s</div>
+                <input type="number" id="guess-input" placeholder="Enter 1 to 10" onkeydown="if(event.key==='Enter') makeGuess()">
+                <button onclick="makeGuess()">Submit</button>
+                <p class="history">History: <span id="guess-history" style="color: #fff;">-</span></p>
+            </div>
+
+            <div id="message-box" class="game-message">Ready to Guess?</div>
+            <img id="result-gif" src="" style="display:none; margin: 10px auto; width: 100%; max-width: 250px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.2);">
+        </div>
+
+        <div id="section-stats" class="hidden">
+            <h2>Your Statistics</h2>
+            <div id="stats-content">Loading...</div>
+        </div>
+
+        <div id="section-leaderboard" class="hidden">
+            <h2>🏆 Leaderboard (Top 100)</h2>
+            <ul id="leaderboard-list"></ul>
+        </div>
+        
+        <div id="section-titles" class="hidden">
+            <h2>🏅 Titles System</h2>
+            <ul>
+                <li style="justify-content: center;">
+                    <span class="player-title title-THE-ONE"><span>THE ONE</span></span> 
+                    <span style="margin: 0 12px; color: #666;">-</span> 
+                    Top #1 Highest points
+                </li>
+                {% for title, pts in titles|reverse %}
+                <li style="justify-content: center;">
+                    <span class="player-title title-{{ title|replace(' ', '-') }}">{{ title }}</span> 
+                    <span style="margin: 0 12px; color: #666;">-</span> 
+                    {{ "{:,}".format(pts) }} points
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <button class="quit" onclick="handleLogout()">Leave</button>
     </div>
 
-    <div id="titles-section" class="section">
-        <h2>🏅 Titles</h2>
-        <ul>
-            {% for title, pts in titles|reverse %}
-            <li><span class="player-title title-{{ title }}">{{ title }}</span> - {{ pts }} points</li>
-            {% endfor %}
-        </ul>
-    </div>
-</div>
-
-<audio id="winSound" src="{{ url_for('static', filename='win.mp3') }}"></audio>
-<audio id="loseSound" src="{{ url_for('static', filename='lose.mp3') }}"></audio>
-<audio id="clickSound" src="{{ url_for('static', filename='click.mp3') }}"></audio>
+    <audio id="winSound" src="{{ url_for('static', filename='win.mp3') }}"></audio>
+    <audio id="loseSound" src="{{ url_for('static', filename='lose.mp3') }}"></audio>
+    <audio id="clickSound" src="{{ url_for('static', filename='click.mp3') }}"></audio>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    let timerInterval;
+    let startTime;
+    let currentAudio = null;
+    let maxNumber = 10; 
 
-        const showSection = (sectionId) => {
-            document.querySelectorAll('.section').forEach(section => {
-                section.style.display = 'none';
-            });
-            document.getElementById(sectionId + '-section').style.display = 'block';
-        };
-
-        document.querySelectorAll('.top-menu button[data-section]').forEach(button => {
-            button.addEventListener('click', () => showSection(button.dataset.section));
+    function showSection(id) {
+        ['game', 'stats', 'leaderboard', 'titles'].forEach(s => {
+            document.getElementById('section-' + s).classList.add('hidden');
         });
+        document.getElementById('section-' + id).classList.remove('hidden');
+        playClick();
+    }
 
-        const clickSound = document.getElementById('clickSound');
-        document.querySelectorAll("button").forEach(btn => {
-            btn.addEventListener("click", () => {
-                clickSound.currentTime = 0;
-                clickSound.play().catch(e => {});
-            });
-        });
+    function playClick() {
+        const s = document.getElementById('clickSound');
+        s.currentTime = 0; s.play().catch(()=>{});
+    }
 
-        const gameReady = {{ game_ready | tojson }};
-        if (gameReady) {
-            let seconds = {{ timer | tojson }};
-            const timerElement = document.getElementById('timer');
-            setInterval(() => {
-                seconds++;
-                timerElement.innerText = seconds;
-            }, 1000);
+    function playLoop(type) {
+        stopLoop();
+        currentAudio = document.getElementById(type + 'Sound');
+        if(currentAudio) {
+            currentAudio.loop = true;
+            currentAudio.currentTime = 0;
+            currentAudio.play().catch(e=>{});
         }
+    }
 
-        const winSound = document.getElementById('winSound');
-        const loseSound = document.getElementById('loseSound');
+    function stopLoop() {
+        if(currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+            currentAudio = null;
+        }
+    }
+
+    document.addEventListener('click', () => { if(currentAudio) stopLoop(); });
+    document.addEventListener('keydown', () => { if(currentAudio) stopLoop(); });
+
+    function updateTitleDisplay(title) {
+        const titleEl = document.getElementById('display-title');
+        const userEl = document.getElementById('display-username');
+        const formattedTitle = title.replace(' ', '-');
+
+        // Update Title Badge
+        if(title === "THE ONE") {
+            titleEl.innerHTML = "<span>THE ONE</span>";
+        } else {
+            titleEl.innerText = title;
+        }
+        titleEl.className = 'player-title title-' + formattedTitle;
+
+        // 2. Update Username Color Class
+        // Remove old text classes
+        userEl.className = ''; // Clear all
+        userEl.classList.add('text-' + formattedTitle);
+        userEl.style.color = ''; // Remove any inline color
+    }
+
+    async function handleLogin() {
+        const user = document.getElementById('username-input').value;
+        if(!user) return alert("Codename required.");
+
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username: user})
+        });
+        const data = await res.json();
         
-        const message = "{{ message }}"; 
-
-        if (message.includes('✅')) {
-            winSound.loop = true;
-            let playPromise = winSound.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.log("Autoplay was prevented. Playing on first click.");
-                    document.body.addEventListener('click', () => winSound.play(), { once: true });
-                });
-            }
-        } else if (message.includes('❌')) {
-            let playPromise = loseSound.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.log("Autoplay was prevented. Playing on first click.");
-                    document.body.addEventListener('click', () => loseSound.play(), { once: true });
-                });
-            }
+        if(res.ok) {
+            document.getElementById('display-username').innerText = user;
+            updateTitleDisplay(data.title);
+            
+            const loginScreen = document.getElementById('login-screen');
+            const mainScreen = document.getElementById('main-screen');
+            
+            loginScreen.classList.add('hidden');
+            mainScreen.classList.remove('hidden');
+            
+            playClick();
+        } else {
+            alert(data.error || "Login Failed");
         }
-    });
+    }
+
+    async function setDifficulty() {
+        const diff = document.getElementById('difficulty-select').value;
+        const res = await fetch('/api/difficulty', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({difficulty: diff})
+        });
+        const data = await res.json();
+        
+        maxNumber = data.max_number; 
+        document.getElementById('guess-input').placeholder = `Guess 1 to ${maxNumber.toLocaleString()}`;
+        
+        document.getElementById('message-box').innerText = data.message;
+        document.getElementById('game-interface').classList.add('hidden');
+        document.getElementById('start-btn-container').classList.remove('hidden');
+        document.getElementById('result-gif').style.display = 'none';
+    }
+
+    async function startGame() {
+        stopLoop();
+        const res = await fetch('/api/start', {method: 'POST'});
+        const data = await res.json();
+        
+        document.getElementById('start-btn-container').classList.add('hidden');
+        document.getElementById('game-interface').classList.remove('hidden');
+        document.getElementById('message-box').innerText = data.message;
+        document.getElementById('guess-history').innerText = "";
+        document.getElementById('guess-input').value = "";
+        document.getElementById('guess-input').focus();
+        document.getElementById('result-gif').style.display = 'none';
+        
+        startTime = Date.now();
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            const seconds = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById('timer').innerText = seconds;
+        }, 1000);
+        playClick();
+    }
+
+    async function makeGuess() {
+        const guessVal = document.getElementById('guess-input').value;
+        if(!guessVal) return;
+
+        const res = await fetch('/api/guess', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({guess: guessVal})
+        });
+        const data = await res.json();
+
+        document.getElementById('message-box').innerText = data.message;
+        if(data.history) document.getElementById('guess-history').innerText = data.history.join(', ');
+
+        if (data.status === 'win') {
+            endGame(true);
+            if(data.new_title) updateTitleDisplay(data.new_title);
+        } else if (data.status === 'lose') {
+            endGame(false);
+        } else {
+            playClick();
+            document.getElementById('guess-input').value = "";
+            document.getElementById('guess-input').focus();
+        }
+    }
+
+    function endGame(won) {
+        clearInterval(timerInterval);
+        document.getElementById('game-interface').classList.add('hidden');
+        document.getElementById('start-btn-container').classList.remove('hidden');
+        
+        const gif = document.getElementById('result-gif');
+        gif.style.display = 'block';
+        
+        if(won) {
+            playLoop('win'); 
+            gif.src = "{{ url_for('static', filename='correct.gif') }}";
+        } else {
+            playLoop('lose'); 
+            gif.src = "{{ url_for('static', filename='wrong.gif') }}";
+        }
+    }
+
+    async function loadStats() {
+        showSection('stats');
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        const winRate = data.total_games > 0 ? ((data.correct_guesses/data.total_games)*100).toFixed(1) : 0;
+        
+        let titleHtml = `<span class="player-title title-${data.title.replace(' ', '-')}"><span>${data.title}</span></span>`;
+
+        document.getElementById('stats-content').innerHTML = `
+            <div style="margin-bottom: 20px;">Current Title: ${titleHtml}</div>
+            <div class="stats-grid">
+                <div class="stat-item"><div class="stat-val">${data.points.toLocaleString()}</div><div class="stat-label">Points</div></div>
+                <div class="stat-item"><div class="stat-val">${data.total_games}</div><div class="stat-label">Games</div></div>
+                <div class="stat-item"><div class="stat-val">${data.correct_guesses}</div><div class="stat-label">Wins</div></div>
+                <div class="stat-item"><div class="stat-val">${winRate}%</div><div class="stat-label">Win Rate</div></div>
+            </div>
+        `;
+    }
+
+    async function loadLeaderboard() {
+        showSection('leaderboard');
+        const list = document.getElementById('leaderboard-list');
+        list.innerHTML = "<div style='padding:20px'>Accessing Database...</div>";
+        
+        const res = await fetch('/api/leaderboard');
+        const data = await res.json();
+        
+        list.innerHTML = "";
+        data.forEach((player, index) => {
+            const li = document.createElement('li');
+            const rankClass = player.title.replace(' ', '-'); 
+            const textClass = 'text-' + rankClass;
+
+            li.innerHTML = `
+                <div style="display:flex; align-items:center;">
+                    <span style="width: 30px; font-weight:bold; color: #888;">${index + 1}.</span>
+                    <div style="text-align:left;">
+                        <span class="player-title title-${rankClass}"><span>${player.title}</span></span>
+                        <strong class="${textClass}">${player.username}</strong>
+                    </div>
+                </div>
+                <span class="${textClass}" style="font-weight:bold;">${player.points.toLocaleString()} pts</span>
+            `;
+            list.appendChild(li);
+        });
+    }
+
+    async function handleLogout() {
+        await fetch('/logout');
+        location.reload();
+    }
 </script>
-{% endif %}
+
 </body>
 </html>
