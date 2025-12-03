@@ -50,11 +50,9 @@ def save_score(username, points_to_add, won=False):
         print(f"Error saving score: {e}")
 
 def get_title(points):
-    # Iterate through titles
     for title, threshold in reversed(TITLES):
         if points >= threshold:
             return title
-    # Returns None if points < 100
     return None
 
 def check_if_the_one(username, points):
@@ -75,8 +73,20 @@ def init_session_defaults():
     for k, v in defaults.items():
         session.setdefault(k, v)
 
+def check_and_forfeit():
+    """
+    Checks if a game is currently active. If so, counts it as a loss
+    before proceeding with the new action (changing difficulty, logging out, refreshing page, and start again(just in case for future)).
+    """
+    if session.get('game_ready') and session.get('username'):
+        save_score(session['username'], 0, won=False)
+        session['game_ready'] = False
+        session['attempts'] = 0
+
 @app.route('/')
 def index():
+    check_and_forfeit()
+    
     init_session_defaults()
     user_title = None
     if session.get('username'):
@@ -123,9 +133,12 @@ def login():
 
 @app.route('/api/difficulty', methods=['POST'])
 def set_difficulty():
+    check_and_forfeit()
+
     data = request.json
     session['difficulty'] = data.get('difficulty', 'easy')
     settings = DIFFICULTY_SETTINGS[session['difficulty']]
+    
     return jsonify({
         'message': f"Difficulty set to {session['difficulty'].capitalize()}.",
         'max_number': settings['max_number']
@@ -133,6 +146,8 @@ def set_difficulty():
 
 @app.route('/api/start', methods=['POST'])
 def start_game():
+    check_and_forfeit()
+
     settings = DIFFICULTY_SETTINGS[session['difficulty']]
     session['random_number'] = random.randint(1, settings['max_number'])
     session['attempts'] = 0
@@ -238,6 +253,8 @@ def get_stats():
 
 @app.route('/logout')
 def logout():
+    check_and_forfeit()
+    
     session.clear()
     return jsonify({'success': True})
 
