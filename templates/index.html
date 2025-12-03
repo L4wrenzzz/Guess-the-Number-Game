@@ -334,18 +334,25 @@
 
         <div class="player-info-container">
             <span>Player:</span>
+            
+            {% if user_title %}
             <span id="display-title" class="player-title title-{{ user_title|replace(' ', '-') }}"><span>{{ user_title }}</span></span> 
             <strong id="display-username" class="text-{{ user_title|replace(' ', '-') }}">{{ username }}</strong>
+            {% else %}
+            <span id="display-title" class="player-title hidden"><span></span></span> 
+            <strong id="display-username">{{ username }}</strong>
+            {% endif %}
+            
         </div>
 
         <div id="section-game">
             <div class="difficulty-select">
                 <select id="difficulty-select" onchange="setDifficulty()">
-                    <option value="easy">      Easy (1-10)      |  3 attempts |   3 points</option>
-                    <option value="medium">    Medium (1-100)    |  8 attempts |  10 points</option>
-                    <option value="hard">      Hard (1-1k)       | 15 attempts |  20 points</option>
+                    <option value="easy">     Easy (1-10)       |  3 attempts |   3 points</option>
+                    <option value="medium">    Medium (1-100)     |  8 attempts |  10 points</option>
+                    <option value="hard">      Hard (1-1k)        | 15 attempts |  20 points</option>
                     <option value="impossible">Impossible (1-100k) | 25 attempts | 45 points</option>
-                    <option value="million">   1 Million (1-1m)  | 50 attempts| 150 points</option>
+                    <option value="million">   1 Million (1-1m)   | 50 attempts| 150 points</option>
                 </select>
             </div>
 
@@ -442,6 +449,16 @@
     function updateTitleDisplay(title) {
         const titleEl = document.getElementById('display-title');
         const userEl = document.getElementById('display-username');
+
+        if (!title) {
+            titleEl.className = 'player-title hidden';
+            titleEl.innerHTML = '';
+            userEl.className = '';
+            userEl.style.color = '';
+            return;
+        }
+
+        titleEl.classList.remove('hidden');
         const formattedTitle = title.replace(' ', '-');
 
         if(title === "THE ONE") {
@@ -539,7 +556,7 @@
 
         if (data.status === 'win') {
             endGame(true);
-            if(data.new_title) updateTitleDisplay(data.new_title);
+            updateTitleDisplay(data.new_title);
         } else if (data.status === 'lose') {
             endGame(false);
         } else {
@@ -593,14 +610,26 @@
         list.innerHTML = "";
         data.forEach((player, index) => {
             const li = document.createElement('li');
-            const rankClass = player.title.replace(' ', '-'); 
-            const textClass = 'text-' + rankClass;
+            
+            // Logic to handle empty title (points < 100)
+            let titleHtml = '';
+            let textClass = '';
+            
+            if (player.title) {
+                const rankClass = player.title.replace(' ', '-');
+                textClass = 'text-' + rankClass;
+                titleHtml = `<span class="player-title title-${rankClass}"><span>${player.title}</span></span>`;
+            } else {
+                // No title, leave html empty, text is default white
+                titleHtml = ''; 
+                textClass = ''; 
+            }
 
             li.innerHTML = `
                 <div style="display:flex; align-items:center; min-width: 0;">
                     <span style="width: 30px; font-weight:bold; color: #888; flex-shrink: 0;">${index + 1}.</span>
                     <div style="text-align:left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center;">
-                        <span class="player-title title-${rankClass}"><span>${player.title}</span></span>
+                        ${titleHtml}
                         <strong class="${textClass}" style="margin-left: 8px;">${player.username}</strong>
                     </div>
                 </div>

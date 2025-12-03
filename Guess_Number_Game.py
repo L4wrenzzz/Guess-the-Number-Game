@@ -50,10 +50,12 @@ def save_score(username, points_to_add, won=False):
         print(f"Error saving score: {e}")
 
 def get_title(points):
+    # Iterate through titles
     for title, threshold in reversed(TITLES):
         if points >= threshold:
             return title
-    return "Newbie"
+    # Returns None if points < 100
+    return None
 
 def check_if_the_one(username, points):
     try:
@@ -76,7 +78,7 @@ def init_session_defaults():
 @app.route('/')
 def index():
     init_session_defaults()
-    user_title = "Newbie"
+    user_title = None
     if session.get('username'):
         pts = session.get('points', 0)
         user_title = get_title(pts)
@@ -98,7 +100,7 @@ def login():
         return jsonify({'error': 'Invalid username. Only letters and numbers allowed.'}), 400
     
     session['username'] = username
-    current_title = "Newbie"
+    current_title = None
     
     try:
         response = supabase.table('leaderboard').select('*').eq('username', username).execute()
