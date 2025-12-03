@@ -611,7 +611,6 @@
         data.forEach((player, index) => {
             const li = document.createElement('li');
             
-            // Logic to handle empty title (points < 100)
             let titleHtml = '';
             let textClass = '';
             
@@ -620,7 +619,6 @@
                 textClass = 'text-' + rankClass;
                 titleHtml = `<span class="player-title title-${rankClass}"><span>${player.title}</span></span>`;
             } else {
-                // No title, leave html empty, text is default white
                 titleHtml = ''; 
                 textClass = ''; 
             }
@@ -633,7 +631,7 @@
                         <strong class="${textClass}" style="margin-left: 8px;">${player.username}</strong>
                     </div>
                 </div>
-                <span class="${textClass}" style="font-weight:bold; white-space: nowrap; margin-left: auto;">${player.points.toLocaleString()} pts</span>
+                <span class="${textClass}" style="font-weight:bold; white-space: nowrap; margin-left: auto;">${player.points.toLocaleString()} points</span>
             `;
             list.appendChild(li);
         });
